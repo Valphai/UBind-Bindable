@@ -1,11 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Aya.DataBinding;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
-public struct TestChildData {
+public struct TestChildData : IBindable {
     public string Title;
     public string Note1;
     public string Note2;

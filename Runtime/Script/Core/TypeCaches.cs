@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,6 +24,8 @@ namespace Aya.DataBinding
 
         private static Assembly[] _assemblies;
 
+        public static Type BaseBindableType = typeof(IBindable);
+        
         public static Dictionary<Assembly, List<Type>> AssemblyTypeDic = new Dictionary<Assembly, List<Type>>();
         public static Dictionary<Type, List<PropertyInfo>> TypePropertyDic = new Dictionary<Type, List<PropertyInfo>>();
         public static Dictionary<Type, Dictionary<string, PropertyInfo>> TypeNamePropertyDic = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
@@ -77,6 +80,8 @@ namespace Aya.DataBinding
 
         public static BindingFlags DefaultBindingFlags { get; set; } = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
+        private static readonly Dictionary<string, Type> bindablesCache = new();
+
         public static Assembly GetAssemblyByName(string assemblyName)
         {
             if (string.IsNullOrEmpty(assemblyName)) return null;
@@ -88,6 +93,47 @@ namespace Aya.DataBinding
             }
 
             return null;
+        }
+
+        public static bool TryFindDerivedBindable(string fullTypeName, out Type type)
+        {
+            if (bindablesCache.Count <= 0)
+                FindDerivedBindables();
+            
+            return bindablesCache.TryGetValue(fullTypeName, out type);
+        }
+
+        public static IEnumerable<Type> FindDerivedBindables()
+        {
+            if (bindablesCache.Count > 0)
+                return bindablesCache.Values.AsEnumerable();
+
+            var derivedBindables = FindDerivedTypes(BaseBindableType);
+            foreach (var derived in derivedBindables)
+            {
+                bindablesCache.Add(derived.FullName, derived);
+            }
+            
+            return bindablesCache.Values.AsEnumerable();
+        }
+        
+        public static IEnumerable<Type> FindDerivedTypes(Type baseType) => FindDerivedTypes(baseType, Assemblies);
+        
+        public static IEnumerable<Type> FindDerivedTypes(Type baseType, Assembly[] assemblies)
+        {
+            foreach (var assembly in assemblies)
+            {
+                var types = assembly.GetTypes();
+                
+                foreach (var type in types)
+                {
+                    if (type == baseType || type.IsAbstract || type.IsInterface)
+                        continue;
+
+                    if (baseType.IsAssignableFrom(type))
+                        yield return type;
+                }
+            }
         }
 
         public static Type GetTypeByName(string assemblyName, string typeName)

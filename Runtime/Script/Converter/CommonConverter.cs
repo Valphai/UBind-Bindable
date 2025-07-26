@@ -9,7 +9,7 @@ namespace Aya.DataBinding
         {
             if (data == null) return null;
             var dataType = data.GetType();
-            if (dataType == convertType || dataType == typeof(object))
+            if (convertType.IsAssignableFrom(dataType) || dataType == typeof(object))
             {
                 return data;
             }

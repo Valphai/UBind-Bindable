@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Aya.DataBinding;
 using UnityEngine;
@@ -5,18 +6,18 @@ using UnityEngine;
 namespace Project.Game.Views
 {
     [AddComponentMenu("Data Binding/RecyclingListView Binder")]
-    public class RecyclingListViewBinder : ComponentBinder<RecyclingListView, List<object>, RuntimeRecyclingListViewBinder>
+    public class RecyclingListViewBinder : ComponentBinder<RecyclingListView, IList, RuntimeRecyclingListViewBinder>
     {
         public override bool NeedUpdate => true;
     }
 
-    public class RuntimeRecyclingListViewBinder : DataBinderList<RecyclingListView, List<object>>
+    public class RuntimeRecyclingListViewBinder : DataBinderList<RecyclingListView, IList>
     {
         #region DataBinderList
 
         public override bool NeedUpdate => true;
         
-        public override List<object> Value
+        public override IList Value
         {
             get => list;
             set
@@ -56,11 +57,11 @@ namespace Project.Game.Views
 
         private readonly List<RuntimeTypeBinder> registeredBinders = new();
         
-        private List<object> list;
+        private IList list;
         
         private void PopulateItem(RecyclingListViewItem item, int rowIndex)
         {
-            if (!item.TryGetComponent<ElementTypeBinder>(out var binder))
+            if (!item.TryGetComponent<TypeBinder>(out var binder))
             {
                 Debug.LogError("You forgot to add the binder");
                 return;
@@ -74,7 +75,7 @@ namespace Project.Game.Views
 #if UNITY_EDITOR
 
     [UnityEditor.CustomEditor(typeof(RecyclingListViewBinder)), UnityEditor.CanEditMultipleObjects]
-    public class RecyclingListViewBinderEditor : ComponentBinderEditor<RecyclingListView, List<object>, RuntimeRecyclingListViewBinder>
+    public class RecyclingListViewBinderEditor : ComponentBinderEditor<RecyclingListView, IList, RuntimeRecyclingListViewBinder>
     {
     }
 

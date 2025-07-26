@@ -19,7 +19,6 @@ namespace Aya.DataBinding
         public string Key;
         public DataDirection Direction = DataDirection.Target;
 
-        public string Assembly;
         public string Type;
         public List<TypeBindMap> Map = new List<TypeBindMap>();
 
@@ -29,16 +28,8 @@ namespace Aya.DataBinding
         {
             if (_binderCaches == null)
             {
-                _binderCaches = new List<DataBinder>();
-                var type = TypeCaches.GetTypeByName(Assembly, Type);
-                foreach (var map in Map)
-                {
-                    var key = type.Name + "." + map.Property + "." + Key;
-                    var (property, field) =
-                        TypeCaches.GetTypePropertyOrFieldByName(map.Target.GetType(), map.TargetProperty);
-                    var binder = new RuntimePropertyBinder(Container, key, Direction, map.Target, property, field);
-                    _binderCaches.Add(binder);
-                }
+                if (!TryCacheBinders()) 
+                    return;
             }
 
             foreach (var binder in _binderCaches)
@@ -59,8 +50,8 @@ namespace Aya.DataBinding
         public void Bind(string container, string newKey)
         {
             if (_binderCaches == null)
-                return;
-
+                TryCacheBinders();
+            
             if (string.IsNullOrEmpty(container) || string.IsNullOrEmpty(newKey))
                 return;
 
@@ -84,6 +75,27 @@ namespace Aya.DataBinding
                 binder.UpdateSource();
                 binder.UpdateTarget();
             }
+        }
+        
+        private bool TryCacheBinders()
+        {
+            _binderCaches = new List<DataBinder>();
+            if (!TypeCaches.TryFindDerivedBindable(Type, out var type))
+            {
+                Debug.LogError($"Couldn't find bindable for {Type}");
+                return false;
+            }
+                
+            foreach (var map in Map)
+            {
+                var key = type.Name + "." + map.Property + "." + Key;
+                var (property, field) =
+                    TypeCaches.GetTypePropertyOrFieldByName(map.Target.GetType(), map.TargetProperty);
+                var binder = new RuntimePropertyBinder(Container, key, Direction, map.Target, property, field);
+                _binderCaches.Add(binder);
+            }
+
+            return true;
         }
     }
 }

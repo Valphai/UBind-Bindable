@@ -1,5 +1,6 @@
 ﻿#if UNITY_EDITOR
 using System;
+using System.Linq;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
@@ -51,18 +52,17 @@ namespace Aya.DataBinding
             SearchableDropdownList(propertyName, root, CheckNullFunc, ResetFunc, CurrentDisplayNameGetter, OnClick);
         }
 
-        public static SearchableDropdownItem CreateTypeMenu(string assemblyName)
+        public static SearchableDropdownItem CreateTypeMenu()
         {
-            var root = new SearchableDropdownItem(string.IsNullOrEmpty(assemblyName) ? "No Assembly" : assemblyName + " - Type");
+            var root = new SearchableDropdownItem("Bindables");
             root.AddChild(new SearchableDropdownItem(EditorStyle.NoneStr, null));
             root.AddSeparator();
-
-            var assembly = TypeCaches.GetAssemblyByName(assemblyName);
-            if (assembly == null) return root;
-            var types = assembly.GetTypes();
-            for (var i = 0; i < types.Length; i++)
+            
+            var derivedTypes = TypeCaches.FindDerivedBindables()
+                .ToArray();
+            
+            foreach (var type in derivedTypes)
             {
-                var type = types[i];
                 if (type.IsAbstract) continue;
                 if (type.IsInterface) continue;
                 if (type.IsGenericType) continue;
@@ -75,20 +75,17 @@ namespace Aya.DataBinding
             return root;
         }
 
-        public static void TypeMenu(string propertyName, SerializedProperty property, string assemblyName, Action<Type> onClick = null)
+        public static void TypeMenu(string propertyName, SerializedProperty property, Action<Type> onClick = null)
         {
-            var root = CreateTypeMenu(assemblyName);
-            bool CheckNullFunc() => TypeCaches.GetTypeByName(assemblyName, property.stringValue) == null;
+            var root = CreateTypeMenu();
+            bool CheckNullFunc() => !TypeCaches.TryFindDerivedBindable(property.stringValue, out _);
             void ResetFunc() => property.stringValue = null;
-            string CurrentDisplayNameGetter()
-            {
-                var type = TypeCaches.GetTypeByName(assemblyName, property.stringValue);
-                return type == null ? EditorStyle.NoneStr : type.Name;
-            }
+            string CurrentDisplayNameGetter() => string.IsNullOrEmpty(property.stringValue) ? EditorStyle.NoneStr : property.stringValue;
 
             void OnClick(SearchableDropdownItem item)
             {
-                var type = TypeCaches.GetTypeByName(assemblyName, item.Value == null ? "" : item.Value.ToString());
+                var fullTypeName = item.Value == null ? "" : item.Value.ToString();
+                TypeCaches.TryFindDerivedBindable(fullTypeName, out var type);
                 property.stringValue = type != null ? type.FullName : "";
                 property.serializedObject.ApplyModifiedProperties();
                 onClick?.Invoke(type);

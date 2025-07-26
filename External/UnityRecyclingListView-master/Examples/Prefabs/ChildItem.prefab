@@ -165,7 +165,8 @@ GameObject:
   - component: {fileID: 8699625926193876490}
   - component: {fileID: 2757982202855801997}
   - component: {fileID: 9138159912152891133}
-  - component: {fileID: 6757298675943203670}
+  - component: {fileID: 4808463898777513756}
+  - component: {fileID: 1262470432872431104}
   m_Layer: 5
   m_Name: ChildItem
   m_TagString: Untagged
@@ -234,7 +235,7 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
---- !u!114 &6757298675943203670
+--- !u!114 &4808463898777513756
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -243,23 +244,34 @@ MonoBehaviour:
   m_GameObject: {fileID: 3546619229314839408}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 51de3718b79a0744ca6cf58442638eb9, type: 3}
+  m_Script: {fileID: 11500000, guid: 336f7191f0ed4820a1844d9c3c253a37, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Container: Default
+--- !u!114 &1262470432872431104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3546619229314839408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8580fce7ea2d468ef832b01d2abaa1f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Container: TestList
   Key: 
   Direction: 1
-  Assembly: Assembly-CSharp
   Type: TestChildData
   Map:
   - Property: Title
     Target: {fileID: 5198050249495137039}
     TargetProperty: text
   - Property: Note1
-    Target: {fileID: 2320007929958512595}
+    Target: {fileID: 5698122441288927554}
     TargetProperty: text
   - Property: Note2
-    Target: {fileID: 5698122441288927554}
+    Target: {fileID: 2320007929958512595}
     TargetProperty: text
 --- !u!1 &4991227333897739239
 GameObject:

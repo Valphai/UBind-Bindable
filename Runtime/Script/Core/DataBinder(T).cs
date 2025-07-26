@@ -2,7 +2,12 @@
 
 namespace Aya.DataBinding
 {
-    public abstract class DataBinder<T> : DataBinder
+    public interface IDataBinder<out T>
+    {
+        T Value { get; }
+    }
+    
+    public abstract class DataBinder<T> : DataBinder, IDataBinder<T>
     {
         public T PreviousData { get; internal set; }
         public int PreviousDataHashCode { get; internal set; }

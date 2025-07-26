@@ -39,11 +39,11 @@ namespace Aya.DataBinding
             DrawDataKey(DataKeyProperty);
             DrawDirection(DirectionProperty);
 
-            GUIUtil.AssemblyMenu("Assembly", AssemblyProperty);
-            GUIUtil.TypeMenu("Type", TypeProperty, AssemblyProperty.stringValue);
+            // GUIUtil.AssemblyMenu("Assembly", AssemblyProperty);
+            GUIUtil.TypeMenu("Type", TypeProperty);
 
-            var currentType = TypeCaches.GetTypeByName(AssemblyProperty.stringValue, TypeProperty.stringValue);
-            if (currentType != null)
+            // var currentType = TypeCaches.GetTypeByName(AssemblyProperty.stringValue, TypeProperty.stringValue);
+            if (TypeCaches.TryFindDerivedBindable(TypeProperty.stringValue, out var currentType))
             {
                 DrawTypeMapList(currentType);
             }

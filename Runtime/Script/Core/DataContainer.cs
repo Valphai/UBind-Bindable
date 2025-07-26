@@ -118,7 +118,7 @@ namespace Aya.DataBinding
             for (var i = 0; i < dataBinders.Count; i++)
             {
                 var dataBinder = dataBinders[i];
-                var sourceDataBinder = dataBinder as DataBinder<T>;
+                var sourceDataBinder = dataBinder as IDataBinder<T>;
                 if (sourceDataBinder == null) continue;
                 var result = sourceDataBinder.Value;
                 return result;
