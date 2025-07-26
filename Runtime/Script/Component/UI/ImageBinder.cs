@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Aya.DataBinding
 {
-    [AddComponentMenu(UBind.AddComponentMenuPath + "/Image Binder")]
+    [AddComponentMenu("Data Binding/Image Binder")]
     public class ImageBinder : ComponentBinder<Image, Sprite, RuntimeImageBinder>
     {
         public override bool NeedUpdate => true;

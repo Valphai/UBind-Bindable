@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Aya.DataBinding
 {
-    [CustomEditor(typeof(TypeBinder)), CanEditMultipleObjects]
+    [CustomEditor(typeof(TypeBinder), true), CanEditMultipleObjects]
     public class TypeBinderEditor : BaseBinderEditor
     {
         public TypeBinder TypeBinder => target as TypeBinder;

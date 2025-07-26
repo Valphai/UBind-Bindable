@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Aya.DataBinding
 {
-    [AddComponentMenu(UBind.AddComponentMenuPath + "/InputField Binder")]
+    [AddComponentMenu("Data Binding/InputField Binder")]
     public class InputFieldBinder : ComponentBinder<InputField, string, RuntimeInputDataBinder>
     {
        

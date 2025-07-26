@@ -12,7 +12,7 @@ namespace Aya.DataBinding
         public string TargetProperty;
     }
 
-    [AddComponentMenu(UBind.AddComponentMenuPath + "/Type Binder")]
+    [AddComponentMenu("Data Binding/Type Binder")]
     public class TypeBinder : MonoBehaviour
     {
         public string Container = DataContainer.Default;
@@ -23,7 +23,7 @@ namespace Aya.DataBinding
         public string Type;
         public List<TypeBindMap> Map = new List<TypeBindMap>();
 
-        private List<DataBinder> _binderCaches;
+        protected List<DataBinder> _binderCaches;
 
         public virtual void OnEnable()
         {
@@ -34,7 +34,8 @@ namespace Aya.DataBinding
                 foreach (var map in Map)
                 {
                     var key = type.Name + "." + map.Property + "." + Key;
-                    var (property, field) = TypeCaches.GetTypePropertyOrFieldByName(map.Target.GetType(), map.TargetProperty);
+                    var (property, field) =
+                        TypeCaches.GetTypePropertyOrFieldByName(map.Target.GetType(), map.TargetProperty);
                     var binder = new RuntimePropertyBinder(Container, key, Direction, map.Target, property, field);
                     _binderCaches.Add(binder);
                 }
@@ -52,6 +53,36 @@ namespace Aya.DataBinding
             foreach (var binder in _binderCaches)
             {
                 binder.UnBind();
+            }
+        }
+        
+        public void Bind(string container, string newKey)
+        {
+            if (_binderCaches == null)
+                return;
+
+            if (string.IsNullOrEmpty(container) || string.IsNullOrEmpty(newKey))
+                return;
+
+            foreach (var binder in _binderCaches)
+            {
+                binder.Container = container;
+                if (string.IsNullOrEmpty(Key))
+                {
+                    binder.Key += newKey;
+                    continue;
+                }
+                
+                binder.Key = binder.Key.Replace(Key, newKey);
+            }
+
+            Container = container;
+            Key = newKey;
+
+            foreach (var binder in _binderCaches)
+            {
+                binder.UpdateSource();
+                binder.UpdateTarget();
             }
         }
     }

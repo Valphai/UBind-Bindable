@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Aya.DataBinding
 {
-    [AddComponentMenu(UBind.AddComponentMenuPath + "/RawImage Binder")]
+    [AddComponentMenu("Data Binding/RawImage Binder")]
     public class RawImageBinder : ComponentBinder<RawImage, Texture, RuntimeRawImageBinder>
     {
         public override bool NeedUpdate => true;

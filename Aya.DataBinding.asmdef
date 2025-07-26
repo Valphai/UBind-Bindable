@@ -1,6 +1,9 @@
 {
     "name": "Aya.DataBinding",
-    "references": [],
+    "rootNamespace": "",
+    "references": [
+        "Unity.TextMeshPro"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": true,

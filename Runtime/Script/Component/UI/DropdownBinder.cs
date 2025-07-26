@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Aya.DataBinding
 {
-    [AddComponentMenu(UBind.AddComponentMenuPath + "/Dropdown Binder")]
+    [AddComponentMenu("Data Binding/Dropdown Binder")]
     public class DropdownBinder : ComponentBinder<Dropdown, int, RuntimeDropdownBinder>
     {
        

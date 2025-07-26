@@ -57,7 +57,9 @@ namespace Aya.DataBinding
             var dataBinders = DataContainer.GetDestinations(Key);
             var data = Value;
             PreviousData = data;
-            PreviousDataHashCode = data.GetHashCode();
+            if (data != null)
+                PreviousDataHashCode = data.GetHashCode();
+            
             for (var i = 0; i < dataBinders.Count; i++)
             {
                 var dataBinder = dataBinders[i];

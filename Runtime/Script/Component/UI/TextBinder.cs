@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 namespace Aya.DataBinding
 {
-    [AddComponentMenu(UBind.AddComponentMenuPath + "/Text Binder")]
+    [AddComponentMenu("Data Binding/Text Binder")]
     public class TextBinder : ComponentBinder<Text, string, RuntimeTextBinder>
     {
         public override bool NeedUpdate => true;
