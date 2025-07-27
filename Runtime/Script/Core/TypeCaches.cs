@@ -7,9 +7,9 @@ using UnityEngine.UI;
 
 namespace Aya.DataBinding
 {
-    internal static class TypeCaches
+    public static class TypeCaches
     {
-        public static Assembly[] Assemblies
+        internal static Assembly[] Assemblies
         {
             get
             {
@@ -26,13 +26,13 @@ namespace Aya.DataBinding
 
         public static Type BaseBindableType = typeof(IBindable);
         
-        public static Dictionary<Assembly, List<Type>> AssemblyTypeDic = new Dictionary<Assembly, List<Type>>();
-        public static Dictionary<Type, List<PropertyInfo>> TypePropertyDic = new Dictionary<Type, List<PropertyInfo>>();
-        public static Dictionary<Type, Dictionary<string, PropertyInfo>> TypeNamePropertyDic = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
-        public static Dictionary<Type, List<FieldInfo>> TypeFieldDic = new Dictionary<Type, List<FieldInfo>>();
-        public static Dictionary<Type, Dictionary<string, FieldInfo>> TypeNameFiledDic = new Dictionary<Type, Dictionary<string, FieldInfo>>();
+        internal static Dictionary<Assembly, List<Type>> AssemblyTypeDic = new Dictionary<Assembly, List<Type>>();
+        internal static Dictionary<Type, List<PropertyInfo>> TypePropertyDic = new Dictionary<Type, List<PropertyInfo>>();
+        internal static Dictionary<Type, Dictionary<string, PropertyInfo>> TypeNamePropertyDic = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
+        internal static Dictionary<Type, List<FieldInfo>> TypeFieldDic = new Dictionary<Type, List<FieldInfo>>();
+        internal static Dictionary<Type, Dictionary<string, FieldInfo>> TypeNameFiledDic = new Dictionary<Type, Dictionary<string, FieldInfo>>();
 
-        public static List<Type> BaseTypes = new List<Type>()
+        internal static List<Type> BaseTypes = new List<Type>()
         {
             typeof(ushort),
             typeof(short),
@@ -51,7 +51,7 @@ namespace Aya.DataBinding
             typeof(object)
         };
 
-        public static List<Type> BindableTypes = new List<Type>(BaseTypes)
+        internal static List<Type> BindableTypes = new List<Type>(BaseTypes)
         {
             typeof(Vector2),
             typeof(Vector2Int),
@@ -65,7 +65,7 @@ namespace Aya.DataBinding
             typeof(UnityEngine.Object)
         };
 
-        public static Dictionary<Type, string> AutoBindComponentTypeDic = new Dictionary<Type, string>()
+        internal static Dictionary<Type, string> AutoBindComponentTypeDic = new Dictionary<Type, string>()
         {
             {typeof(Text), "text"},
             {typeof(InputField), "text"},
@@ -78,11 +78,19 @@ namespace Aya.DataBinding
             {typeof(RawImage), "texture"},
         };
 
-        public static BindingFlags DefaultBindingFlags { get; set; } = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        internal static BindingFlags DefaultBindingFlags { get; set; } = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
 
         private static readonly Dictionary<string, Type> bindablesCache = new();
 
-        public static Assembly GetAssemblyByName(string assemblyName)
+        public static bool TryFindDerivedBindable(string fullTypeName, out Type type)
+        {
+            if (bindablesCache.Count <= 0)
+                FindDerivedBindables();
+            
+            return bindablesCache.TryGetValue(fullTypeName, out type);
+        }
+
+        internal static Assembly GetAssemblyByName(string assemblyName)
         {
             if (string.IsNullOrEmpty(assemblyName)) return null;
             for (var i = 0; i < Assemblies.Length; i++)
@@ -95,15 +103,7 @@ namespace Aya.DataBinding
             return null;
         }
 
-        public static bool TryFindDerivedBindable(string fullTypeName, out Type type)
-        {
-            if (bindablesCache.Count <= 0)
-                FindDerivedBindables();
-            
-            return bindablesCache.TryGetValue(fullTypeName, out type);
-        }
-
-        public static IEnumerable<Type> FindDerivedBindables()
+        internal static IEnumerable<Type> FindDerivedBindables()
         {
             if (bindablesCache.Count > 0)
                 return bindablesCache.Values.AsEnumerable();
@@ -117,9 +117,9 @@ namespace Aya.DataBinding
             return bindablesCache.Values.AsEnumerable();
         }
         
-        public static IEnumerable<Type> FindDerivedTypes(Type baseType) => FindDerivedTypes(baseType, Assemblies);
+        internal static IEnumerable<Type> FindDerivedTypes(Type baseType) => FindDerivedTypes(baseType, Assemblies);
         
-        public static IEnumerable<Type> FindDerivedTypes(Type baseType, Assembly[] assemblies)
+        internal static IEnumerable<Type> FindDerivedTypes(Type baseType, Assembly[] assemblies)
         {
             foreach (var assembly in assemblies)
             {
@@ -136,7 +136,7 @@ namespace Aya.DataBinding
             }
         }
 
-        public static Type GetTypeByName(string assemblyName, string typeName)
+        internal static Type GetTypeByName(string assemblyName, string typeName)
         {
             var assembly = GetAssemblyByName(assemblyName);
             if (assembly == null) return null;
@@ -145,7 +145,7 @@ namespace Aya.DataBinding
             return type;
         }
 
-        public static List<Type> GetAssemblyTypes(Assembly assembly)
+        internal static List<Type> GetAssemblyTypes(Assembly assembly)
         {
             if (AssemblyTypeDic.TryGetValue(assembly, out var result)) return result;
             result = new List<Type>();
@@ -161,7 +161,7 @@ namespace Aya.DataBinding
             return result;
         }
 
-        public static List<PropertyInfo> GetTypeProperties(Type type)
+        internal static List<PropertyInfo> GetTypeProperties(Type type)
         {
             if (TypePropertyDic.TryGetValue(type, out var result)) return result;
             result = new List<PropertyInfo>();
@@ -172,7 +172,7 @@ namespace Aya.DataBinding
             return result;
         }
 
-        public static PropertyInfo GetTypePropertyByName(Type type, string propertyName)
+        internal static PropertyInfo GetTypePropertyByName(Type type, string propertyName)
         {
             if (string.IsNullOrEmpty(propertyName)) return null;
             if (!TypeNamePropertyDic.TryGetValue(type, out var propertyDic))
@@ -191,7 +191,7 @@ namespace Aya.DataBinding
             return propertyInfo;
         }
 
-        public static List<FieldInfo> GetTypeFields(Type type)
+        internal static List<FieldInfo> GetTypeFields(Type type)
         {
             if (TypeFieldDic.TryGetValue(type, out var result)) return result;
             result = new List<FieldInfo>();
@@ -202,7 +202,7 @@ namespace Aya.DataBinding
             return result;
         }
 
-        public static FieldInfo GetTypeFieldByName(Type type, string fieldName)
+        internal static FieldInfo GetTypeFieldByName(Type type, string fieldName)
         {
             if (string.IsNullOrEmpty(fieldName)) return null;
             if (!TypeNameFiledDic.TryGetValue(type, out var fieldDic))
@@ -221,21 +221,21 @@ namespace Aya.DataBinding
             return fieldInfo;
         }
 
-        public static (List<PropertyInfo>, List<FieldInfo>) GetTypePropertiesAndFields(Type type)
+        internal static (List<PropertyInfo>, List<FieldInfo>) GetTypePropertiesAndFields(Type type)
         {
             var property = GetTypeProperties(type);
             var filed = GetTypeFields(type);
             return (property, filed);
         }
 
-        public static (PropertyInfo, FieldInfo) GetTypePropertyOrFieldByName(Type type, string name)
+        internal static (PropertyInfo, FieldInfo) GetTypePropertyOrFieldByName(Type type, string name)
         {
             var property = GetTypePropertyByName(type, name);
             var filed = GetTypeFieldByName(type, name);
             return (property, filed);
         }
 
-        public static bool CheckTypeHasPropertyOrFieldByName(Type type, string name)
+        internal static bool CheckTypeHasPropertyOrFieldByName(Type type, string name)
         {
             var (property, filed) = GetTypePropertyOrFieldByName(type, name);
             return property != null || filed != null;
