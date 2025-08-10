@@ -1,6 +1,9 @@
 ﻿using Aya.Sample;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Chocolate4.ScreenSystem;
 
 namespace Aya.DataBinding
 {
@@ -40,6 +43,33 @@ namespace Aya.DataBinding
         {
             return Bind(key, DataDirection.Source, getter, null);
         }
+
+        public static IEnumerable<RuntimeValueBinder<IBindable>> BindSourceAndAllSubSources(string key, Func<IBindable> getter) 
+            => BindSourceAndAllSubSources(string.Empty, key, getter);
+        
+        public static IEnumerable<RuntimeValueBinder<IBindable>> BindSourceAndAllSubSources(string container, string key, Func<IBindable> getter)
+        {
+            yield return Bind(container, key, DataDirection.Source, getter, null);
+            
+            var value = getter();
+            var valueType = value.GetType();
+            var properties = valueType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            foreach (var info in properties)
+            {
+                if (!info.PropertyType.IsAssignableFrom(TypeCaches.BaseBindableType)) 
+                    continue;
+
+                var get = new Func<IBindable>(() => (IBindable)info.GetValue(value));
+                
+                var subContainerKey = info.Name;
+                var subContainer = string.IsNullOrEmpty(container) ? $"{key}.{subContainerKey}" : $"{container}.{subContainerKey}";
+                foreach (var subBinder in BindSourceAndAllSubSources(subContainer, subContainerKey, get))
+                {
+                    yield return subBinder;
+                }
+            }
+        }
+        
         public static RuntimeValueBinder<T> BindSource<T>(string container, string key, Func<T> getter)
         {
             return Bind(container, key, DataDirection.Source, getter, null);
@@ -66,7 +96,7 @@ namespace Aya.DataBinding
 
         public static RuntimeValueBinder<T> Bind<T>(string key, DataDirection direction, Func<T> getter, Action<T> setter)
         {
-            return Bind(DataContainer.Default, key, direction, getter, setter); ;
+            return Bind(DataContainer.Default, key, direction, getter, setter);
         }
 
         public static RuntimeValueBinder<T> Bind<T>(string container, string key, DataDirection direction, Func<T> getter, Action<T> setter)
