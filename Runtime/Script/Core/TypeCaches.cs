@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Chocolate4.ScreenSystem;
+using CommunityToolkit.Mvvm.Input;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -26,6 +27,7 @@ namespace Aya.DataBinding
         private static Assembly[] _assemblies;
 
         public static Type BaseBindableType = typeof(IBindable);
+        public static Type CommandAttributeType = typeof(RelayCommandAttribute);
         
         internal static Dictionary<Assembly, List<Type>> AssemblyTypeDic = new Dictionary<Assembly, List<Type>>();
         internal static Dictionary<Type, List<PropertyInfo>> TypePropertyDic = new Dictionary<Type, List<PropertyInfo>>();

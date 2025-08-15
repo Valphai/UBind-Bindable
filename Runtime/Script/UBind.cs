@@ -7,6 +7,31 @@ using Chocolate4.ScreenSystem;
 
 namespace Aya.DataBinding
 {
+    public struct BindersGroup : IDisposable
+    {
+        public List<RuntimeValueBinder<IBindable>> BoundBindables { get; }
+        public List<RuntimeValueBinder<Action>> BoundCommands { get; }
+
+        public BindersGroup(List<RuntimeValueBinder<IBindable>> boundBindables, List<RuntimeValueBinder<Action>> boundCommands)
+        {
+            BoundBindables = boundBindables;
+            BoundCommands = boundCommands;
+        }
+
+        public void Dispose()
+        {
+            foreach (var binder in BoundBindables)
+            {
+                binder.UnBind();
+            }
+            
+            foreach (var binder in BoundCommands)
+            {
+                binder.UnBind();
+            }
+        }
+    }
+    
     public static class UBind
     {
         #region Converter
@@ -44,12 +69,15 @@ namespace Aya.DataBinding
             return Bind(key, DataDirection.Source, getter, null);
         }
 
-        public static IEnumerable<RuntimeValueBinder<IBindable>> BindSourceAndAllSubSources(string key, Func<IBindable> getter) 
+        public static BindersGroup BindSourceAndAllSubSources(string key, Func<IBindable> getter) 
             => BindSourceAndAllSubSources(string.Empty, key, getter);
         
-        public static IEnumerable<RuntimeValueBinder<IBindable>> BindSourceAndAllSubSources(string container, string key, Func<IBindable> getter)
+        public static BindersGroup BindSourceAndAllSubSources(string container, string key, Func<IBindable> getter)
         {
-            yield return Bind(container, key, DataDirection.Source, getter, null);
+            var commandBinders = new List<RuntimeValueBinder<Action>>();
+            var propertyBinders = new List<RuntimeValueBinder<IBindable>> {
+                Bind(container, key, DataDirection.Source, getter, null)
+            };
             
             var value = getter();
             var valueType = value.GetType();
@@ -62,12 +90,29 @@ namespace Aya.DataBinding
                 var get = new Func<IBindable>(() => (IBindable)info.GetValue(value));
                 
                 var subContainerKey = info.Name;
-                var subContainer = string.IsNullOrEmpty(container) ? $"{key}.{subContainerKey}" : $"{container}.{subContainerKey}";
-                foreach (var subBinder in BindSourceAndAllSubSources(subContainer, subContainerKey, get))
-                {
-                    yield return subBinder;
-                }
+                var subContainer = string.IsNullOrEmpty(container) ? $"{key}" : $"{container}.{key}";
+
+                var subBindersGroup = BindSourceAndAllSubSources(subContainer, subContainerKey, get);
+                commandBinders.AddRange(subBindersGroup.BoundCommands);
+                propertyBinders.AddRange(subBindersGroup.BoundBindables);
             }
+            
+            var methodInfos = valueType.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            foreach (var methodInfo in methodInfos)
+            {
+                var commandAttribute = methodInfo.GetCustomAttribute(TypeCaches.CommandAttributeType);
+                if (commandAttribute == null)
+                    continue;
+                
+                var get = new Func<Action>(() => () => methodInfo.Invoke(value, null));
+                
+                var subContainerKey = methodInfo.Name;
+                var subContainer = string.IsNullOrEmpty(container) ? $"{key}" : $"{container}.{key}";
+                var boundCommand = Bind(subContainer, subContainerKey, DataDirection.Source, get, null);
+                commandBinders.Add(boundCommand);
+            }
+            
+            return new BindersGroup(propertyBinders, commandBinders);
         }
         
         public static RuntimeValueBinder<T> BindSource<T>(string container, string key, Func<T> getter)
