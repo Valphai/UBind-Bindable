@@ -1,4 +1,5 @@
 ﻿#if UNITY_EDITOR
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -23,7 +24,15 @@ namespace Aya.DataBinding
                 }
             }
         }
+        
+        private Type monobehaviourType = typeof(MonoBehaviour);
 
+        protected void DrawInstance(SerializedProperty property)
+        {
+            property.objectReferenceValue = 
+                EditorGUILayout.ObjectField(new GUIContent(property.displayName), property.objectReferenceValue, monobehaviourType, true);
+        }
+        
         protected void DrawDataKey(SerializedProperty property)
         {
             using (new ColorScope(EditorStyle.ErrorColor, () => string.IsNullOrEmpty(property.stringValue)))

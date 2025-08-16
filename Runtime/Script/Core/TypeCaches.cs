@@ -243,5 +243,11 @@ namespace Aya.DataBinding
             var (property, filed) = GetTypePropertyOrFieldByName(type, name);
             return property != null || filed != null;
         }
+        
+        internal static object GetValue(this MemberInfo memberInfo, object srcObject) => memberInfo switch {
+            FieldInfo fieldInfo => fieldInfo.GetValue(srcObject),
+            PropertyInfo propertyInfo => propertyInfo.GetValue(srcObject),
+            _ => throw new NotImplementedException($"Cannot get member value from {memberInfo.Name}."),
+        };
     }
 }

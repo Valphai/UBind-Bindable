@@ -71,7 +71,8 @@ namespace Aya.DataBinding
 
         public virtual void Bind()
         {
-            if (NeedUpdate)
+            // RuntimePropertyBinder always true, this feels like some internal hax
+            if (NeedUpdate) 
             {
                 BindUpdater.Ins.Add(this);
             }

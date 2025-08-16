@@ -6,7 +6,7 @@ namespace Aya.DataBinding
     {
         T Value { get; }
     }
-    
+
     public abstract class DataBinder<T> : DataBinder, IDataBinder<T>
     {
         public T PreviousData { get; internal set; }
@@ -49,6 +49,9 @@ namespace Aya.DataBinding
 
         #endregion
 
+        /// <summary>
+        /// Source of data, which we look at in order to propagate data if changed.
+        /// </summary>
         public abstract T Value { get; set; }
 
         public virtual void OnValueChangedCallback(T data)

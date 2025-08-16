@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Chocolate4.ScreenSystem;
 using UnityEngine;
 
 namespace Aya.DataBinding
@@ -12,9 +13,19 @@ namespace Aya.DataBinding
         public string TargetProperty;
     }
 
+    public enum BindingType
+    {
+        Type, Instance
+    }
+    
     [AddComponentMenu("Data Binding/Type Binder")]
     public class TypeBinder : MonoBehaviour
     {
+        [SerializeField]
+        private BindingType bindingType;
+        
+        public MonoBehaviour Instance;
+        
         public string Container = DataContainer.Default;
         public string Key;
         public DataDirection Direction = DataDirection.Target;
@@ -80,22 +91,52 @@ namespace Aya.DataBinding
         private bool TryCacheBinders()
         {
             _binderCaches = new List<DataBinder>();
-            if (!TypeCaches.TryFindDerivedBindable(Type, out var type))
+            if (bindingType == BindingType.Type)
             {
-                Debug.LogError($"Couldn't find bindable for {Type}");
-                return false;
-            }
+                if (!TypeCaches.TryFindDerivedBindable(Type, out var type))
+                {
+                    Debug.LogError($"Couldn't find bindable for {Type}");
+                    return false;
+                }
                 
+                CacheType(type);
+            }
+            else if (bindingType == BindingType.Instance)
+                CacheInstance();
+            
+            return true;
+        }
+
+        private void CacheInstance()
+        {
+            var instanceType = Instance.GetType();
+            foreach (var map in Map)
+            {
+                var (targetProperty, targetField) =
+                    TypeCaches.GetTypePropertyOrFieldByName(map.Target.GetType(), map.TargetProperty);
+                
+                var (instanceProperty, instanceField) =
+                    TypeCaches.GetTypePropertyOrFieldByName(instanceType, map.Property);
+                
+                var binder = new InstanceRuntimePropertyBinder(Instance, instanceProperty, instanceField, Direction, map.Target, targetProperty, targetField);
+                _binderCaches.Add(binder);
+            }
+        }
+
+        private void CacheType(Type type)
+        {
             foreach (var map in Map)
             {
                 var key = type.Name + "." + map.Property + "." + Key;
                 var (property, field) =
                     TypeCaches.GetTypePropertyOrFieldByName(map.Target.GetType(), map.TargetProperty);
+                
+                // binder => target is ur source
+                // if direction != source do nothing
+                // thats all
                 var binder = new RuntimePropertyBinder(Container, key, Direction, map.Target, property, field);
                 _binderCaches.Add(binder);
             }
-
-            return true;
         }
     }
 }

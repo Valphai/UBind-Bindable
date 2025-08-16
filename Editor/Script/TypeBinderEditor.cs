@@ -10,23 +10,27 @@ namespace Aya.DataBinding
     {
         public TypeBinder TypeBinder => target as TypeBinder;
 
+        protected SerializedProperty BindingTypeProperty;
+        protected SerializedProperty InstanceProperty;
+        
         protected SerializedProperty ContainerKeyProperty;
         protected SerializedProperty DataKeyProperty;
         protected SerializedProperty DirectionProperty;
         protected SerializedProperty UpdateTypeProperty;
 
-        protected SerializedProperty AssemblyProperty;
         protected SerializedProperty TypeProperty;
         protected SerializedProperty MapProperty;
 
         public virtual void OnEnable()
         {
+            BindingTypeProperty = serializedObject.FindProperty("bindingType");
+            InstanceProperty = serializedObject.FindProperty("Instance");
+            
             ContainerKeyProperty = serializedObject.FindProperty("Container");
             DataKeyProperty = serializedObject.FindProperty("Key");
             DirectionProperty = serializedObject.FindProperty("Direction");
             UpdateTypeProperty = serializedObject.FindProperty("UpdateType");
 
-            AssemblyProperty = serializedObject.FindProperty("Assembly");
             TypeProperty = serializedObject.FindProperty("Type");
             MapProperty = serializedObject.FindProperty("Map");
         }
@@ -35,14 +39,35 @@ namespace Aya.DataBinding
         {
             serializedObject.Update();
 
+            EditorGUILayout.PropertyField(BindingTypeProperty);
+            var typeBinding = BindingTypeProperty.enumValueIndex == 0;
+            if (typeBinding)
+                DrawTypeMapping();
+            else
+                DrawInstanceMapping();
+
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private void DrawInstanceMapping()
+        {
+            DrawInstance(InstanceProperty);
+            DrawDirection(DirectionProperty);
+
+            if (InstanceProperty.objectReferenceValue == null) return;
+
+            DrawTypeMapList(InstanceProperty.objectReferenceValue.GetType());
+        }
+
+        private void DrawTypeMapping()
+        {
             DrawContainerKey(ContainerKeyProperty);
             DrawDataKey(DataKeyProperty);
             DrawDirection(DirectionProperty);
-
+                
             // GUIUtil.AssemblyMenu("Assembly", AssemblyProperty);
             GUIUtil.TypeMenu("Type", TypeProperty);
-
-            // var currentType = TypeCaches.GetTypeByName(AssemblyProperty.stringValue, TypeProperty.stringValue);
+                
             if (TypeCaches.TryFindDerivedBindable(TypeProperty.stringValue, out var currentType))
             {
                 DrawTypeMapList(currentType);
@@ -54,8 +79,6 @@ namespace Aya.DataBinding
                     TypeBinder.Map.Clear();
                 }
             }
-
-            serializedObject.ApplyModifiedProperties();
         }
 
         protected virtual void DrawTypeMapList(Type currentType)
