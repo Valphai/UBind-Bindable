@@ -3,6 +3,12 @@ using System.Reflection;
 
 namespace Aya.DataBinding
 {
+    /// <summary>
+    /// When set in the inspector:
+    /// Target => UI will receive data,
+    /// Source => UI will set data,
+    /// Both => UI will set & receive data
+    /// </summary>
     public enum DataDirection
     {
         Source = 0,

@@ -133,6 +133,7 @@ namespace Aya.DataBinding
                 // binder => target is ur source
                 // if direction != source do nothing
                 // thats all
+                // value => value of the property on target
                 var binder = new RuntimePropertyBinder(Container, key, Direction, map.Target, property, field);
                 _binderCaches.Add(binder);
             }

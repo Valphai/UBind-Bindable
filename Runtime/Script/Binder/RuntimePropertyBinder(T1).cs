@@ -34,7 +34,7 @@ namespace Aya.DataBinding
                 var dataType = data != null ? data.GetType() : typeof(object);
                 if (FiledInfo != null)
                 {
-                    if (data != null && dataType != FiledInfo.FieldType)
+                    if (data != null && !FiledInfo.FieldType.IsAssignableFrom(dataType))
                     {
                         var convertData = Convert.ChangeType(data, FiledInfo.FieldType, CultureInfo.InvariantCulture);
                         FiledInfo.SetValue(Target, convertData);
@@ -47,7 +47,7 @@ namespace Aya.DataBinding
 
                 if (PropertyInfo != null)
                 {
-                    if (data != null && dataType != PropertyInfo.PropertyType)
+                    if (data != null && !PropertyInfo.PropertyType.IsAssignableFrom(dataType))
                     {
                         var convertData = Convert.ChangeType(data, PropertyInfo.PropertyType,
                             CultureInfo.InvariantCulture);

@@ -1,18 +1,17 @@
-﻿using Aya.Sample;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Chocolate4.ScreenSystem;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Aya.DataBinding
 {
     public struct BindersGroup : IDisposable
     {
-        public List<RuntimeValueBinder<IBindable>> BoundBindables { get; }
+        public List<DataBinder> BoundBindables { get; }
         public List<RuntimeValueBinder<Action>> BoundCommands { get; }
 
-        public BindersGroup(List<RuntimeValueBinder<IBindable>> boundBindables, List<RuntimeValueBinder<Action>> boundCommands)
+        public BindersGroup(List<DataBinder> boundBindables, List<RuntimeValueBinder<Action>> boundCommands)
         {
             BoundBindables = boundBindables;
             BoundCommands = boundCommands;
@@ -69,30 +68,65 @@ namespace Aya.DataBinding
             return Bind(key, DataDirection.Source, getter, null);
         }
 
-        public static BindersGroup BindSourceAndAllSubSources(string key, Func<IBindable> getter) 
-            => BindSourceAndAllSubSources(string.Empty, key, getter);
-        
-        public static BindersGroup BindSourceAndAllSubSources(string container, string key, Func<IBindable> getter)
+        public static BindersGroup BindSourceAndAllSubSources(string key, object target) 
+            => BindSourceAndAllSubSources(string.Empty, key, target);
+
+        public static BindersGroup BindSourceAndAllSubSources(string container, string key, object target)
         {
+            return BindSourceAndAllSubSources(container, key, target, target.GetType());
+        }
+
+        private static Type DisallowedTargetType = typeof(IRelayCommand);
+        
+        private static BindersGroup BindSourceAndAllSubSources(string container, string key, object value, Type valueType)
+        {
+            var boundTargets = new List<DataBinder>();
+            
+            // manually bind every prop & field as target, excluding IRelayCommands (setting their values from ui makes no sense)
+            var (props, fields) = TypeCaches.GetTypePropertiesAndFields(valueType);
+            foreach (var propertyInfo in props)
+            {
+                if (propertyInfo.PropertyType.IsAssignableFrom(DisallowedTargetType))
+                    continue;
+
+                if (propertyInfo.GetSetMethod() == null)
+                    continue;
+                
+                var propKey = valueType.Name + "." + propertyInfo.Name + "." + key;
+                var binder = BindTarget(container, propKey, value, propertyInfo);
+                boundTargets.Add(binder);
+            }
+
+            foreach (var fieldInfo in fields)
+            {
+                var propKey = valueType.Name + "." + fieldInfo.Name + "." + key;
+                var binder = BindTarget(container, propKey, value, fieldInfo);
+                boundTargets.Add(binder);
+            }
+
+            
             var commandBinders = new List<RuntimeValueBinder<Action>>();
-            var propertyBinders = new List<RuntimeValueBinder<IBindable>> {
-                Bind(container, key, DataDirection.Source, getter, null)
+            var propertyBinders = new List<DataBinder> {
+                BindSource(container, key, value) // bind every prop & field from value, as source (update ui with data)
             };
             
-            var value = getter();
-            var valueType = value.GetType();
+            foreach (var boundTarget in boundTargets)
+            {
+                boundTarget.Bind();
+                boundTarget.UpdateTarget();
+            }
+            propertyBinders.AddRange(boundTargets);
+            
             var properties = valueType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
             foreach (var info in properties)
             {
-                if (!info.PropertyType.IsAssignableFrom(TypeCaches.BaseBindableType)) 
+                if (!TypeCaches.BaseBindableType.IsAssignableFrom(info.PropertyType)) 
                     continue;
 
-                var get = new Func<IBindable>(() => (IBindable)info.GetValue(value));
-                
                 var subContainerKey = info.Name;
                 var subContainer = string.IsNullOrEmpty(container) ? $"{key}" : $"{container}.{key}";
 
-                var subBindersGroup = BindSourceAndAllSubSources(subContainer, subContainerKey, get);
+                var subBindersGroup = BindSourceAndAllSubSources(subContainer, subContainerKey, info.GetValue(value), info.PropertyType);
                 commandBinders.AddRange(subBindersGroup.BoundCommands);
                 propertyBinders.AddRange(subBindersGroup.BoundBindables);
             }
