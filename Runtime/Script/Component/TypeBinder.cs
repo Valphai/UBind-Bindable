@@ -21,8 +21,7 @@ namespace Aya.DataBinding
     [AddComponentMenu("Data Binding/Type Binder")]
     public class TypeBinder : MonoBehaviour
     {
-        [SerializeField]
-        private BindingType bindingType;
+        public BindingType BindingType;
         
         public MonoBehaviour Instance;
         
@@ -91,7 +90,7 @@ namespace Aya.DataBinding
         private bool TryCacheBinders()
         {
             _binderCaches = new List<DataBinder>();
-            if (bindingType == BindingType.Type)
+            if (BindingType == BindingType.Type)
             {
                 if (!TypeCaches.TryFindDerivedBindable(Type, out var type))
                 {
@@ -101,7 +100,7 @@ namespace Aya.DataBinding
                 
                 CacheType(type);
             }
-            else if (bindingType == BindingType.Instance)
+            else if (BindingType == BindingType.Instance)
                 CacheInstance();
             
             return true;

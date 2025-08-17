@@ -23,7 +23,7 @@ namespace Aya.DataBinding
 
         public virtual void OnEnable()
         {
-            BindingTypeProperty = serializedObject.FindProperty("bindingType");
+            BindingTypeProperty = serializedObject.FindProperty("BindingType");
             InstanceProperty = serializedObject.FindProperty("Instance");
             
             ContainerKeyProperty = serializedObject.FindProperty("Container");
