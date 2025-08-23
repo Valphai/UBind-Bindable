@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Chocolate4.ScreenSystem;
 using CommunityToolkit.Mvvm.Input;
@@ -84,6 +85,10 @@ namespace Aya.DataBinding
             
             // manually bind every prop & field as target, excluding IRelayCommands (setting their values from ui makes no sense)
             var (props, fields) = TypeCaches.GetTypePropertiesAndFields(valueType);
+            fields = fields
+                .Where(info => !(info.IsLiteral && !info.IsInitOnly)) // skip const from being set
+                .ToList();
+            
             foreach (var propertyInfo in props)
             {
                 if (propertyInfo.PropertyType.IsAssignableFrom(DisallowedTargetType))
