@@ -45,7 +45,7 @@ namespace Aya.DataBinding
             foreach (var binder in _binderCaches)
             {
                 binder.Bind();
-                //binder.UpdateTarget();
+                binder.UpdateTarget();
             }
         }
 
