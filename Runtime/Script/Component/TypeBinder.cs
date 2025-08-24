@@ -60,7 +60,12 @@ namespace Aya.DataBinding
         public void Bind(string container, string newKey)
         {
             if (_binderCaches == null)
-                TryCacheBinders();
+                throw new InvalidOperationException("Cannot invoke Bind with empty cache. Call OnEnable() first.");
+            
+            foreach (var binder in _binderCaches)
+            {
+                binder.UnBind();
+            }
             
             if (string.IsNullOrEmpty(container) || string.IsNullOrEmpty(newKey))
                 return;
@@ -82,12 +87,12 @@ namespace Aya.DataBinding
 
             foreach (var binder in _binderCaches)
             {
-                binder.UpdateSource();
+                binder.Bind();
                 binder.UpdateTarget();
             }
         }
         
-        private bool TryCacheBinders()
+        protected bool TryCacheBinders()
         {
             _binderCaches = new List<DataBinder>();
             if (BindingType == BindingType.Type)
