@@ -24,14 +24,14 @@ namespace Aya.DataBinding
             {
                 binder.UnBind();
             }
-            
+
             foreach (var binder in BoundCommands)
             {
                 binder.UnBind();
             }
         }
     }
-    
+
     public static class UBind
     {
         #region Converter
@@ -69,7 +69,7 @@ namespace Aya.DataBinding
             return Bind(key, DataDirection.Source, getter, null);
         }
 
-        public static BindersGroup BindSourceAndAllSubSources(string key, object target) 
+        public static BindersGroup BindSourceAndAllSubSources(string key, object target)
             => BindSourceAndAllSubSources(string.Empty, key, target);
 
         public static BindersGroup BindSourceAndAllSubSources(string container, string key, object target)
@@ -78,82 +78,50 @@ namespace Aya.DataBinding
         }
 
         private static Type DisallowedTargetType = typeof(IRelayCommand);
-        
-        private static BindersGroup BindSourceAndAllSubSources(string container, string key, object value, Type valueType)
+
+        private static BindersGroup BindSourceAndAllSubSources(string container, string key, object value,
+            Type valueType)
         {
-            var boundTargets = new List<DataBinder>();
-            
-            // manually bind every prop & field as target, excluding IRelayCommands (setting their values from ui makes no sense)
-            var (props, fields) = TypeCaches.GetTypePropertiesAndFields(valueType);
-            fields = fields
-                .Where(info => !(info.IsLiteral && !info.IsInitOnly)) // skip const from being set
-                .ToList();
-            
-            foreach (var propertyInfo in props)
-            {
-                if (propertyInfo.PropertyType.IsAssignableFrom(DisallowedTargetType))
-                    continue;
-
-                if (propertyInfo.GetSetMethod() == null)
-                    continue;
-                
-                var propKey = valueType.Name + "." + propertyInfo.Name + "." + key;
-                var binder = BindTarget(container, propKey, value, propertyInfo);
-                boundTargets.Add(binder);
-            }
-
-            foreach (var fieldInfo in fields)
-            {
-                var propKey = valueType.Name + "." + fieldInfo.Name + "." + key;
-                var binder = BindTarget(container, propKey, value, fieldInfo);
-                boundTargets.Add(binder);
-            }
-
-            
             var commandBinders = new List<RuntimeValueBinder<Action>>();
             var propertyBinders = new List<DataBinder> {
-                BindSource(container, key, value) // bind every prop & field from value, as source (update ui with data)
+                // bind every prop & field from value, as both source and target (update ui with data == source; update data from ui == target)
+                Bind(container, key, DataDirection.Both, value)
             };
-            
-            foreach (var boundTarget in boundTargets)
-            {
-                boundTarget.Bind();
-                boundTarget.UpdateTarget();
-            }
-            propertyBinders.AddRange(boundTargets);
-            
+
             var properties = valueType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
             foreach (var info in properties)
             {
-                if (!TypeCaches.BaseBindableType.IsAssignableFrom(info.PropertyType)) 
+                if (!TypeCaches.BaseBindableType.IsAssignableFrom(info.PropertyType))
                     continue;
 
                 var subContainerKey = info.Name;
                 var subContainer = string.IsNullOrEmpty(container) ? $"{key}" : $"{container}.{key}";
 
-                var subBindersGroup = BindSourceAndAllSubSources(subContainer, subContainerKey, info.GetValue(value), info.PropertyType);
+                var subBindersGroup = BindSourceAndAllSubSources(subContainer, subContainerKey, info.GetValue(value),
+                    info.PropertyType);
                 commandBinders.AddRange(subBindersGroup.BoundCommands);
                 propertyBinders.AddRange(subBindersGroup.BoundBindables);
             }
-            
-            var methodInfos = valueType.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+
+            var methodInfos =
+                valueType.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
             foreach (var methodInfo in methodInfos)
             {
                 var commandAttribute = methodInfo.GetCustomAttribute(TypeCaches.CommandAttributeType);
                 if (commandAttribute == null)
                     continue;
-                
+
                 var get = new Func<Action>(() => () => methodInfo.Invoke(value, null));
-                
+
                 var subContainerKey = methodInfo.Name;
                 var subContainer = string.IsNullOrEmpty(container) ? $"{key}" : $"{container}.{key}";
                 var boundCommand = Bind(subContainer, subContainerKey, DataDirection.Source, get, null);
                 commandBinders.Add(boundCommand);
             }
-            
+
             return new BindersGroup(propertyBinders, commandBinders);
         }
-        
+
         public static RuntimeValueBinder<T> BindSource<T>(string container, string key, Func<T> getter)
         {
             return Bind(container, key, DataDirection.Source, getter, null);
@@ -173,17 +141,20 @@ namespace Aya.DataBinding
         {
             return Bind(key, DataDirection.Both, getter, setter);
         }
+
         public static RuntimeValueBinder<T> BindBoth<T>(string container, string key, Func<T> getter, Action<T> setter)
         {
             return Bind(container, key, DataDirection.Both, getter, setter);
         }
 
-        public static RuntimeValueBinder<T> Bind<T>(string key, DataDirection direction, Func<T> getter, Action<T> setter)
+        public static RuntimeValueBinder<T> Bind<T>(string key, DataDirection direction, Func<T> getter,
+            Action<T> setter)
         {
             return Bind(DataContainer.Default, key, direction, getter, setter);
         }
 
-        public static RuntimeValueBinder<T> Bind<T>(string container, string key, DataDirection direction, Func<T> getter, Action<T> setter)
+        public static RuntimeValueBinder<T> Bind<T>(string container, string key, DataDirection direction,
+            Func<T> getter, Action<T> setter)
         {
             var dataBinder = new RuntimeValueBinder<T>(container, key, direction, getter, setter);
             dataBinder.Bind();
@@ -194,12 +165,14 @@ namespace Aya.DataBinding
 
         #region Bind Value Pair
 
-        public static (RuntimeValueBinder<T>, RuntimeValueBinder<T>) Bind<T>(string key, Func<T> sourceGetter, Action<T> targetSetter)
+        public static (RuntimeValueBinder<T>, RuntimeValueBinder<T>) Bind<T>(string key, Func<T> sourceGetter,
+            Action<T> targetSetter)
         {
             return Bind<T>(DataContainer.Default, key, sourceGetter, targetSetter);
         }
 
-        public static (RuntimeValueBinder<T>, RuntimeValueBinder<T>)  Bind<T>(string container, string key, Func<T> sourceGetter, Action<T> targetSetter)
+        public static (RuntimeValueBinder<T>, RuntimeValueBinder<T>) Bind<T>(string container, string key,
+            Func<T> sourceGetter, Action<T> targetSetter)
         {
             var sourceDataBinder = new RuntimeValueBinder<T>(container, key, DataDirection.Source, sourceGetter, null);
             var targetDataBinder = new RuntimeValueBinder<T>(container, key, DataDirection.Target, null, targetSetter);
@@ -278,12 +251,14 @@ namespace Aya.DataBinding
             return Bind(container, key, DataDirection.Both, target, propertyName);
         }
 
-        public static RuntimePropertyBinder Bind(string key, DataDirection direction, object target, string propertyName)
+        public static RuntimePropertyBinder Bind(string key, DataDirection direction, object target,
+            string propertyName)
         {
             return Bind(DataContainer.Default, key, direction, target, propertyName);
         }
 
-        public static RuntimePropertyBinder Bind(string container, string key, DataDirection direction, object target, string propertyName)
+        public static RuntimePropertyBinder Bind(string container, string key, DataDirection direction, object target,
+            string propertyName)
         {
             var type = target.GetType();
             var (propertyInfo, fieldInfo) = TypeCaches.GetTypePropertyOrFieldByName(type, propertyName);
@@ -299,7 +274,8 @@ namespace Aya.DataBinding
             return Bind(key, DataDirection.Source, target, propertyInfo, null);
         }
 
-        public static RuntimePropertyBinder BindSource(string container, string key, object target, PropertyInfo propertyInfo)
+        public static RuntimePropertyBinder BindSource(string container, string key, object target,
+            PropertyInfo propertyInfo)
         {
             return Bind(container, key, DataDirection.Source, target, propertyInfo, null);
         }
@@ -319,7 +295,8 @@ namespace Aya.DataBinding
             return Bind(key, DataDirection.Target, target, propertyInfo, null);
         }
 
-        public static RuntimePropertyBinder BindTarget(string container, string key, object target, PropertyInfo propertyInfo)
+        public static RuntimePropertyBinder BindTarget(string container, string key, object target,
+            PropertyInfo propertyInfo)
         {
             return Bind(container, key, DataDirection.Target, target, propertyInfo, null);
         }
@@ -339,7 +316,8 @@ namespace Aya.DataBinding
             return Bind(key, DataDirection.Both, target, propertyInfo, null);
         }
 
-        public static RuntimePropertyBinder BindBoth(string container, string key, object target, PropertyInfo propertyInfo)
+        public static RuntimePropertyBinder BindBoth(string container, string key, object target,
+            PropertyInfo propertyInfo)
         {
             return Bind(container, key, DataDirection.Both, target, propertyInfo, null);
         }
@@ -354,17 +332,19 @@ namespace Aya.DataBinding
             return Bind(container, key, DataDirection.Both, target, null, fieldInfo);
         }
 
-        public static RuntimePropertyBinder Bind(string key, DataDirection direction, object target, PropertyInfo propertyInfo, FieldInfo fieldInfo)
+        public static RuntimePropertyBinder Bind(string key, DataDirection direction, object target,
+            PropertyInfo propertyInfo, FieldInfo fieldInfo)
         {
             return Bind(DataContainer.Default, key, direction, target, propertyInfo, fieldInfo);
         }
 
-        public static RuntimePropertyBinder Bind(string container, string key, DataDirection direction, object target, PropertyInfo propertyInfo, FieldInfo fieldInfo)
+        public static RuntimePropertyBinder Bind(string container, string key, DataDirection direction, object target,
+            PropertyInfo propertyInfo, FieldInfo fieldInfo)
         {
             var dataBinder = new RuntimePropertyBinder(container, key, direction, target, propertyInfo, fieldInfo);
             dataBinder.Bind();
             return dataBinder;
-        } 
+        }
 
         #endregion
     }
