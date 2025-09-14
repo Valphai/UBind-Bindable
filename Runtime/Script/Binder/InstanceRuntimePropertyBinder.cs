@@ -1,5 +1,6 @@
 using System.Reflection;
 using AIFramework.Common;
+using Chocolate4.ScreenSystem;
 using UnityEngine;
 
 namespace Aya.DataBinding
@@ -23,6 +24,21 @@ namespace Aya.DataBinding
         }
 
         public InstanceRuntimePropertyBinder(MonoBehaviour instance,
+            PropertyInfo instanceProperty,
+            FieldInfo instanceField,
+            DataDirection direction,
+            Component toModify,
+            PropertyInfo toModifyProperty,
+            FieldInfo toModifyField)
+        {
+            this.toModify = toModify;
+            memberToModify = toModifyProperty == null ? toModifyField : toModifyProperty;
+            propertyFromInstance = instanceProperty == null ? instanceField : instanceProperty;
+            Direction = direction;
+            Target = instance;
+        }
+        
+        public InstanceRuntimePropertyBinder(IBindable instance,
             PropertyInfo instanceProperty,
             FieldInfo instanceField,
             DataDirection direction,

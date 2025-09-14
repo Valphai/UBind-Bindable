@@ -20,6 +20,8 @@ namespace Aya.DataBinding
 
         protected SerializedProperty TypeProperty;
         protected SerializedProperty MapProperty;
+        
+        public SerializedProperty BindableInstanceProperty;
 
         public virtual void OnEnable()
         {
@@ -33,7 +35,10 @@ namespace Aya.DataBinding
 
             TypeProperty = serializedObject.FindProperty("Type");
             MapProperty = serializedObject.FindProperty("Map");
+            
+            BindableInstanceProperty = serializedObject.FindProperty("bindableInstance");
         }
+
 
         public override void OnInspectorGUI()
         {
@@ -51,10 +56,29 @@ namespace Aya.DataBinding
 
         private void DrawInstanceMapping()
         {
-            DrawInstance(InstanceProperty);
-            DrawDirection(DirectionProperty);
+            EditorGUILayout.PropertyField(BindableInstanceProperty);
+            if (BindableInstanceProperty.boolValue)
+            {
+                DrawDirection(DirectionProperty);
 
-            if (InstanceProperty.objectReferenceValue == null) return;
+                GUIUtil.TypeMenu("Type", TypeProperty);
+                
+                if (TypeCaches.TryFindDerivedBindable(TypeProperty.stringValue, out var currentType))
+                {
+                    DrawTypeMapList(currentType);
+                    return;
+                }
+
+                if (TypeBinder.Map.Count > 0)
+                    TypeBinder.Map.Clear();
+            }
+            else
+            {
+                DrawInstance(InstanceProperty);
+                DrawDirection(DirectionProperty);
+                
+                if (InstanceProperty.objectReferenceValue == null) return;
+            }
 
             DrawTypeMapList(InstanceProperty.objectReferenceValue.GetType());
         }

@@ -2,11 +2,12 @@
 using System.Collections;
 using UnityEngine;
 using Aya.DataBinding;
+using Chocolate4.ScreenSystem;
 
 namespace Aya.Sample
 {
     [Serializable]
-    public class UBindSamplePlayerData
+    public class UBindSamplePlayerData : IBindable
     {
         public string Name;
         public int Exp;
@@ -20,10 +21,11 @@ namespace Aya.Sample
 
         public void Awake()
         {
-            Player = new UBindSamplePlayerData() {Name = "Player",};
+            Player = new UBindSamplePlayerData() {Name = "Player", Stat = .4f };
 
             // Source
             UBind.BindSource("PlayerData", Player);
+            UBind.BindTarget("PlayerData", Player);
 
             // Manual Both
             // UBind.BindBoth(nameof(UBindSamplePlayerData) + "." + nameof(Player.Name) + ".PlayerData", Player, nameof(Player.Name));
@@ -31,16 +33,17 @@ namespace Aya.Sample
             // UBind.BindBoth(nameof(UBindSamplePlayerData) + "." + nameof(Player.Stat) + ".PlayerData", Player, nameof(Player.Stat));
             // UBind.BindBoth(nameof(UBindSamplePlayerData) + "." + nameof(Player.PlayTime) + ".PlayerData", Player, nameof(Player.PlayTime));
 
-            // StartCoroutine(_test());
+            StartCoroutine(_test());
         }
 
         IEnumerator _test()
         {
             while (true)
             {
-                Player.PlayTime += Time.deltaTime;
-                Player.Stat = Player.PlayTime % 1f;
-                Player.Exp = (int) (Player.PlayTime / 5);
+                Debug.Log($"{Player.PlayTime}, {Player.Stat}, {Player.Exp}");
+                // Player.PlayTime += Time.deltaTime;
+                // Player.Stat = Player.PlayTime % 1f;
+                // Player.Exp = (int) (Player.PlayTime / 5);
                 yield return null;
             }
         }
